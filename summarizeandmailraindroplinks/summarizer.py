@@ -16,8 +16,10 @@ class SummaryError(Exception):
 
 class Summarizer:
     def __init__(self, api_key: str, model: str = "gpt-4.1-mini"):
+        if not model or not model.strip():
+            raise ValueError("OpenAI model must be provided.")
         self._client = OpenAI(api_key=api_key)
-        self._model = model
+        self._model = model.strip()
 
     def summarize(self, text: str) -> str:
         try:

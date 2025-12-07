@@ -29,6 +29,7 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         from_name=settings.from_name,
         to_email=settings.to_email,
     )
+    logger.info("Using OpenAI model=%s", settings.openai_model)
 
     failure_notified = False
     try:
