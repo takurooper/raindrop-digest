@@ -17,7 +17,7 @@ def build_email_subject(batch_date: datetime) -> str:
 
 
 def build_email_body(batch_date: datetime, results: List[SummaryResult]) -> Tuple[str, str]:
-    text_header = f"こんにちは。過去{BATCH_LOOKBACK_DAYS}日分のブックマークしたリンクの要約です。\n"
+    text_header = f"過去{BATCH_LOOKBACK_DAYS}日分のブックマークしたリンクの要約です。\n"
     html_parts = [
         """
 <!doctype html>

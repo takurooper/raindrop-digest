@@ -49,8 +49,8 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         if not targets:
             logger.info("No new items to process; sending empty report.")
             subject = build_email_subject(now_jst)
-            empty_text = "こんにちは。過{BATCH_LOOKBACK_DAYS}3日分のブックマークは0件でした。"
-            empty_html = "<p>こんにちは。過去{BATCH_LOOKBACK_DAYS}日分のブックマークは0件でした。</p>"
+            empty_text = f"過去{BATCH_LOOKBACK_DAYS}日分の保存リンクは0件でした。"
+            empty_html = f"<p>過去{BATCH_LOOKBACK_DAYS}日分の保存リンクは0件でした。</p>"
             mailer.send(subject, empty_text, empty_html)
             logger.info("Empty report sent.")
             return results
