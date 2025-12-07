@@ -9,7 +9,7 @@ from .email_formatter import build_email_body, build_email_subject
 from .mailer import MailError, Mailer
 from .models import SummaryResult
 from .raindrop_client import RaindropClient
-from .summarizer import Summarizer, SummaryError
+from .summarizer import Summarizer, SummaryConnectionError, SummaryError
 from .text_extractor import ExtractionError, extract_text
 from .utils import filter_new_items, threshold_from_now, to_jst, utc_now
 
@@ -43,6 +43,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
                 content = extract_text(item.link)
                 summary_text = summarizer.summarize(content.text)
                 results.append(SummaryResult(item=item, status="success", summary=summary_text))
+            except SummaryConnectionError as exc:
+                logger.exception("OpenAI connection failed for item %s: %s", item.id, exc)
+                raise
             except (ExtractionError, SummaryError) as exc:
                 logger.exception("Failed to process item %s: %s", item.id, exc)
                 results.append(SummaryResult(item=item, status="failed", error=str(exc)))
