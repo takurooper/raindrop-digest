@@ -48,10 +48,7 @@ def filter_new_items(items: List[RaindropItem], threshold_jst: datetime) -> List
 
 
 def append_note(original: str | None, addition: str) -> str:
-    if not original:
-        return addition
-    separator = "\n\n" if not original.endswith("\n\n") else ""
-    return f"{original}{separator}{addition}"
+    return addition
 
 
 def trim_text(text: str, max_chars: int) -> str:
