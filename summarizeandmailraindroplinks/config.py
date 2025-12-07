@@ -48,12 +48,18 @@ class Settings:
                 raise ValueError(f"Environment variable {name} is required.")
             return value
 
+        def optional_with_default(name: str, default: str) -> str:
+            value = os.getenv(name)
+            if value is None or not value.strip():
+                return default
+            return value.strip()
+
         return Settings(
             raindrop_token=require("RAINDROP_TOKEN"),
             openai_api_key=require("OPENAI_API_KEY"),
             sendgrid_api_key=require("SENDGRID_API_KEY"),
             to_email=require("TO_EMAIL"),
             from_email=require("FROM_EMAIL"),
-            from_name=os.getenv("FROM_NAME", from_name_default),
-            openai_model=os.getenv("OPENAI_MODEL", openai_model_default),
+            from_name=optional_with_default("FROM_NAME", from_name_default),
+            openai_model=optional_with_default("OPENAI_MODEL", openai_model_default),
         )
