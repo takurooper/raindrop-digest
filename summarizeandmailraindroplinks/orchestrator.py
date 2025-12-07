@@ -33,7 +33,11 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         from_name=settings.from_name,
         to_email=settings.to_email,
     )
-    logger.info("Using OpenAI model=%s", settings.openai_model)
+    logger.info(
+        "Using OpenAI model=%s prompt_source=%s",
+        settings.openai_model,
+        "env:SUMMARY_SYSTEM_PROMPT" if settings.summary_system_prompt else "default",
+    )
 
     failure_notified = False
     try:
