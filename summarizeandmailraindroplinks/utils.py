@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
+import re
 from typing import Iterable, List
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -111,6 +112,25 @@ def choose_preferred_duplicate(items: List[RaindropItem]) -> RaindropItem:
         return query_count, len(item.link)
 
     return min(items, key=score)
+
+
+_CJK_REGEX = re.compile(r"[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]")
+
+
+def is_cjk_text(text: str) -> bool:
+    """
+    Heuristic language check for Japanese/Chinese/Korean.
+
+    If the text contains any Hiragana/Katakana/Han/Hangul, treat it as CJK.
+    """
+    return _CJK_REGEX.search(text) is not None
+
+
+def count_words(text: str) -> int:
+    """
+    Count words for non-CJK texts (primarily English).
+    """
+    return len(re.findall(r"\b\w+\b", text))
 
 
 def threshold_from_now(now_jst: datetime, days: int) -> datetime:

@@ -78,3 +78,21 @@ def test_text_only_when_long_text():
     s.summarize(long_text, ["img1", "img2", "img3", "img4"])
     user_content = fake_client.last_messages[1]["content"]  # type: ignore[index]
     assert all(part.get("type") == "text" for part in user_content)
+
+
+def test_text_only_when_english_exceeds_word_threshold():
+    fake_client = FakeOpenAI()
+    s = Summarizer(api_key="dummy", model="gpt-4.1-mini", client=fake_client)
+    long_english = ("word " * 600).strip()
+    s.summarize(long_english, ["img1", "img2", "img3"])
+    user_content = fake_client.last_messages[1]["content"]  # type: ignore[index]
+    assert all(part.get("type") == "text" for part in user_content)
+
+
+def test_include_images_when_english_within_word_threshold():
+    fake_client = FakeOpenAI()
+    s = Summarizer(api_key="dummy", model="gpt-4.1-mini", client=fake_client)
+    short_english = ("word " * 400).strip()
+    s.summarize(short_english, ["img1", "img2", "img3"])
+    user_content = fake_client.last_messages[1]["content"]  # type: ignore[index]
+    assert any(part.get("type") == "image_url" for part in user_content)

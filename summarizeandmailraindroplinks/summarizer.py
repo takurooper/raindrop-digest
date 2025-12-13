@@ -17,7 +17,8 @@ if TYPE_CHECKING:  # pragma: no cover - type checking only
 else:
     OpenAIType = Any
 
-from .config import DEFAULT_SYSTEM_PROMPT, IMAGE_TEXT_THRESHOLD, MIN_IMAGES_FOR_SUMMARY
+from .config import DEFAULT_SYSTEM_PROMPT, IMAGE_TEXT_THRESHOLD, IMAGE_WORD_THRESHOLD, MIN_IMAGES_FOR_SUMMARY
+from .utils import count_words, is_cjk_text
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,11 @@ class Summarizer:
     def _should_include_images(text: str, images: Optional[Sequence[str]]) -> bool:
         if images is None:
             return False
-        return len(text) <= IMAGE_TEXT_THRESHOLD and len(images) >= MIN_IMAGES_FOR_SUMMARY
+        if len(images) < MIN_IMAGES_FOR_SUMMARY:
+            return False
+        if is_cjk_text(text):
+            return len(text) <= IMAGE_TEXT_THRESHOLD
+        return count_words(text) <= IMAGE_WORD_THRESHOLD
 
     @staticmethod
     def _build_user_content(text: str, images: Sequence[str], include_images: bool) -> list:

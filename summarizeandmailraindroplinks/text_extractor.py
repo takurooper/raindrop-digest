@@ -8,9 +8,9 @@ import httpx
 from lxml import html
 from readability import Document
 
-from .config import IMAGE_TEXT_THRESHOLD, MAX_EXTRACT_CHARS
+from .config import IMAGE_TEXT_THRESHOLD, IMAGE_WORD_THRESHOLD, MAX_EXTRACT_CHARS
 from .models import ExtractedContent
-from .utils import trim_text
+from .utils import count_words, is_cjk_text, trim_text
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,13 @@ def extract_text(url: str) -> ExtractedContent:
     trimmed = trim_text(cleaned, MAX_EXTRACT_CHARS)
     images = None
     image_extraction_attempted = False
-    if len(trimmed) <= IMAGE_TEXT_THRESHOLD:
+    should_attempt_images = False
+    if is_cjk_text(trimmed):
+        should_attempt_images = len(trimmed) <= IMAGE_TEXT_THRESHOLD
+    else:
+        should_attempt_images = count_words(trimmed) <= IMAGE_WORD_THRESHOLD
+
+    if should_attempt_images:
         images = _extract_images_from_html(html_text)
         image_extraction_attempted = True
     logger.info(
