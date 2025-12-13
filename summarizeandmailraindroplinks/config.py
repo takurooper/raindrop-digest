@@ -10,7 +10,7 @@ JST = timezone(timedelta(hours=9))
 # 設定値
 
 # 何日前までのリンクを処理するか（日数）
-BATCH_LOOKBACK_DAYS = 2
+BATCH_LOOKBACK_DAYS = 1
 
 # 抽出する最大文字数
 MAX_EXTRACT_CHARS = 10_000
