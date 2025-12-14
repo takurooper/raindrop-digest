@@ -86,14 +86,34 @@ def _is_tracking_param(key: str) -> bool:
     if lowered.startswith("utm_"):
         return True
     return lowered in {
+        # SNS / campaign tracking
         "fbclid",
         "gclid",
+        "gclsrc",
+        "gclaw",
+        "gcldc",
         "igshid",
         "mc_cid",
         "mc_eid",
+        "msclkid",
         "ref",
         "ref_src",
         "spm",
+        # Google Analytics / link decoration
+        "_gl",
+        "_ga",
+        "_gid",
+        "_gac",
+        "_gcl_au",
+        "_hsenc",
+        "_hsmi",
+        # Common SNS/share parameters (e.g. Yahoo News)
+        "source",
+        "dv",
+        "mid",
+        "date",
+        "ctg",
+        "bt",
     }
 
 
