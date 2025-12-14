@@ -75,7 +75,8 @@ UNSORTED_COLLECTION_ID = -1
 class Settings:
     raindrop_token: str
     openai_api_key: str
-    sendgrid_api_key: str
+    sendgrid_api_key: str | None
+    brevo_api_key: str | None
     to_email: str
     from_email: str
     from_name: str
@@ -99,10 +100,22 @@ class Settings:
                 return default
             return value.strip()
 
+        def optional(name: str) -> str | None:
+            value = os.getenv(name)
+            if value is None or not value.strip():
+                return None
+            return value.strip()
+
+        sendgrid_api_key = optional("SENDGRID_API_KEY")
+        brevo_api_key = optional("BREVO_API_KEY")
+        if brevo_api_key is None and sendgrid_api_key is None:
+            raise ValueError("Either BREVO_API_KEY or SENDGRID_API_KEY is required.")
+
         return Settings(
             raindrop_token=require("RAINDROP_TOKEN"),
             openai_api_key=require("OPENAI_API_KEY"),
-            sendgrid_api_key=require("SENDGRID_API_KEY"),
+            sendgrid_api_key=sendgrid_api_key,
+            brevo_api_key=brevo_api_key,
             to_email=require("TO_EMAIL"),
             from_email=require("FROM_EMAIL"),
             from_name=optional_with_default("FROM_NAME", from_name_default),

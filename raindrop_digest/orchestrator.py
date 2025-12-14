@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 from . import config
 from .config import BATCH_LOOKBACK_DAYS, TAG_DELIVERED, TAG_FAILED
 from .email_formatter import build_email_body, build_email_subject
-from .mailer import MailError, Mailer
+from .mailer import MailError, build_mailer
 from .models import RaindropItem, SummaryResult
 from .raindrop_client import RaindropApiError, RaindropClient, RaindropConnectionError
 from .summarizer import Summarizer, SummaryConnectionError, SummaryError, SummaryRateLimitError
@@ -28,8 +28,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         model=settings.openai_model,
         system_prompt=settings.summary_system_prompt,
     )
-    mailer = Mailer(
-        api_key=settings.sendgrid_api_key,
+    mailer = build_mailer(
+        brevo_api_key=settings.brevo_api_key,
+        sendgrid_api_key=settings.sendgrid_api_key,
         from_email=settings.from_email,
         from_name=settings.from_name,
         to_email=settings.to_email,
@@ -39,6 +40,7 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         settings.openai_model,
         "env:SUMMARY_SYSTEM_PROMPT" if settings.summary_system_prompt != config.DEFAULT_SYSTEM_PROMPT else "default",
     )
+    logger.info("Using mail provider=%s", mailer.provider)
 
     failure_notified = False
     try:

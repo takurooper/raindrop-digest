@@ -26,6 +26,7 @@ jobs:
         env:
           RAINDROP_TOKEN: ${{ secrets.RAINDROP_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           SUMMARY_SYSTEM_PROMPT: ${{ secrets.SUMMARY_SYSTEM_PROMPT }}
           TO_EMAIL: ${{ vars.TO_EMAIL }}

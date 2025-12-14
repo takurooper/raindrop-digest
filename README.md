@@ -11,9 +11,8 @@ Raindrop.io に保存したリンクを、GitHub Actions の定期実行で要�
 - GitHub（このリポジトリをフォークして利用するのがおすすめ）
 - Raindrop.io（ブックマーク保存先）
 - OpenAI（要約用API）
-- SendGrid（メール送信用）
-
-※ OpenAI / SendGrid は利用量に応じて費用が発生します（無料枠やプランの範囲内で運用してください）。
+- Brevo（メール送信用・推奨）
+- （任意）SendGrid（メール送信用・フォールバックとして利用可能）
 
 ---
 
@@ -34,22 +33,42 @@ git clone <あなたのリポジトリURL>
 1) OpenAI の API Keys ページでキーを作成  
 https://platform.openai.com/api-keys
 
+> **Permissionsの設定方法**
+Restricted タブで
+Model capabilities → Responses：許可
+他は すべて None（未選択）
+
 2) 作成したキーを控える（あとで GitHub Secrets に登録）
 
 ---
 
 ## 3. Raindrop APIトークンを取得
 
-1) Raindrop の Integrations / API token 画面でトークンを発行  
+1) Raindrop の Integrations / API token 画面でトークン(Test Token)を発行  
 https://app.raindrop.io/settings/integrations
 
 2) トークンを控える（あとで GitHub Secrets に登録）
 
 ---
 
-## 4. SendGrid を設定（メール送信）
+## 4. Brevo を設定（メール送信・推奨）
 
-### 4.1 Sender（送信元）を用意
+### 4.1 Brevo の送信者（Sender）を用意
+
+Brevo で送信元を登録します（画面の案内に従って Sender を作成してください）。
+
+参考: https://developers.brevo.com/docs/getting-started
+
+### 4.2 Brevo APIキーを作成
+
+1) Brevo の `SMTP & API` から API key を作成  
+2) 作成したキーを控える（あとで GitHub Secrets に登録）
+
+---
+
+## 5. SendGrid を設定（メール送信・任意）
+
+### 5.1 Sender（送信元）を用意
 
 SendGrid は送信元の設定が必須です。まずは簡単な方法として「Single Sender Verification」を使えます。
 
@@ -57,14 +76,14 @@ SendGrid は送信元の設定が必須です。まずは簡単な方法とし�
 
 送信元メールアドレス（`FROM_EMAIL`）はここで認証したものを使ってください。
 
-### 4.2 SendGrid APIキーを作成
+### 5.2 SendGrid APIキーを作成
 
 1) SendGrid の API Keys で API key を作成  
 https://docs.sendgrid.com/ui/account-and-settings/api-keys
 
 2) 作成したキーを控える（あとで GitHub Secrets に登録）
 
-### 4.3 迷惑メール対策（重要）
+### 5.3 迷惑メール対策（重要）
 
 メールが「迷惑メール」に入る場合があります。以下を推奨します。
 
@@ -75,7 +94,7 @@ https://docs.sendgrid.com/ui/account-and-settings/api-keys
 
 ---
 
-## 5. GitHub Actions に設定を登録
+## 6. GitHub Actions に設定を登録
 
 GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `Actions` を開きます。
 
@@ -85,7 +104,8 @@ GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `A
 
 - `RAINDROP_TOKEN`（Raindrop API token）
 - `OPENAI_API_KEY`
-- `SENDGRID_API_KEY`
+- `BREVO_API_KEY`（Brevo API key。通常はこちらを設定）
+- （任意）`SENDGRID_API_KEY`（SendGrid API key。フォールバックとして利用）
 - （任意）`SUMMARY_SYSTEM_PROMPT`（要約プロンプトをカスタムしたい場合）
 
 `SUMMARY_SYSTEM_PROMPT` は複数行でもOKです。未設定の場合はコード内のデフォルトプロンプトが使われます。
@@ -127,8 +147,8 @@ GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `A
 - メールが来ない
   - `Actions` の実行ログを確認（失敗している場合はログに出ます）
   - 迷惑メールフォルダを確認（上記「迷惑メール対策」を参照）
+- Brevo/SendGrid のどちらが使われているか確認したい
+  - GitHub Actions のログに `Using mail provider=brevo|sendgrid` と出ます
 - OpenAI のエラーが多い
   - 一時的な 502/503/504 は 1 回だけリトライします
   - それ以外の失敗は該当リンクのみ失敗扱いになり、メールには「手動確認」として載ります
-
-

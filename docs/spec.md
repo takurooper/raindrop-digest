@@ -10,7 +10,7 @@
 * **バッチ実行基盤**: GitHub Actions
 * **アプリケーション言語**: Python
 * **要約AI**: OpenAI API（Chat Completions / `gpt-4.1-mini` など）
-* **メール送信**: SendGrid API
+* **メール送信**: Brevo API（デフォルト）/ SendGrid API（フォールバック）
 * **本文抽出**: Python + HTML取得 + Readability系ライブラリ
   （例：`readability-lxml` または同等のテキスト抽出ロジック）
 
@@ -24,7 +24,7 @@
 
    * X / YouTube は現状「自動要約しない」扱い（手動確認）。
 6. 抽出テキストを OpenAI API に渡し、日本語で要約を生成（プロンプトは `SUMMARY_SYSTEM_PROMPT` で上書き可能）。
-7. 要約結果を集約してメール本文を構築し、SendGrid API で自分宛に送信。
+7. 要約結果を集約してメール本文を構築し、Brevo/SendGrid で自分宛に送信。
 8. 送信に成功したアイテムに対し、Raindrop API で
 
    * 成功 → `note` に要約を保存＋タグ `配信済み` を付与
@@ -291,15 +291,21 @@ main():
 
   * `choices[0].message.content` を要約テキストとして使用。
 
-### 7.3 SendGrid API
+### 7.3 Brevo / SendGrid（メール送信）
 
-* エンドポイント: `POST /v3/mail/send`
-* 入力：
+* プロバイダ選択:
 
-  * `from`: 送信元メールアドレス（設定値）
-  * `to`: 宛先メールアドレス（設定値）
-  * `subject`: 上記仕様の件名
-  * `content`: `type: text/plain`（MVPではプレーンテキスト。将来的にHTML化も可）
+  * `BREVO_API_KEY` が設定されていれば Brevo を使用（デフォルト）
+  * `BREVO_API_KEY` が未設定で `SENDGRID_API_KEY` が設定されていれば SendGrid を使用
+  * 両方設定されている場合は Brevo を使用
+* Brevo:
+
+  * エンドポイント: `POST https://api.brevo.com/v3/smtp/email`
+  * 認証: `api-key` ヘッダ
+* SendGrid:
+
+  * エンドポイント: `POST /v3/mail/send`
+  * 認証: API key
 
 ---
 
@@ -330,7 +336,8 @@ main():
 
   * `RAINDROP_TOKEN`
   * `OPENAI_API_KEY`
-  * `SENDGRID_API_KEY`
+  * `BREVO_API_KEY`
+  * （任意）`SENDGRID_API_KEY`
   * （任意）`SUMMARY_SYSTEM_PROMPT`
 * Variables（機密でない）:
 
@@ -361,6 +368,7 @@ main():
    ```bash
    export RAINDROP_TOKEN=...
    export OPENAI_API_KEY=...
+   export BREVO_API_KEY=...
    export SENDGRID_API_KEY=...
    export SUMMARY_SYSTEM_PROMPT="（必要に応じてカスタムプロンプトをここに書く）"
    export TO_EMAIL=...
