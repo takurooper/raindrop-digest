@@ -25,7 +25,6 @@ Raindrop.io に保存したリンクを、GitHub Actions の定期実行で要�
 
 ```bash
 git clone <あなたのリポジトリURL>
-cd SummarizeAndMailRaindropLinks
 ```
 
 ---

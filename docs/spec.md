@@ -313,7 +313,7 @@ main():
 │   └── workflows
 │       └── summarize-raindrop.yml   # GitHub Actions ワークフロー定義
 ├── main.py                          # エントリポイント
-├── summarizeandmailraindroplinks
+├── raindrop_digest
 │   ├── config.py                    # 定数・環境変数読み込み
 │   ├── raindrop_client.py           # Raindrop API ラッパ
 │   ├── text_extractor.py            # HTML取得 + 本文抽出 + 画像抽出

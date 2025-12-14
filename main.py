@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import sys
 
-from summarizeandmailraindroplinks import config
-from summarizeandmailraindroplinks.orchestrator import run
+from raindrop_digest import config
+from raindrop_digest.orchestrator import run
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from summarizeandmailraindroplinks.text_extractor import _extract_hero_image_url
+from raindrop_digest.text_extractor import _extract_hero_image_url
 
 
 def test_extract_hero_image_url_prefers_og_image_and_resolves_relative():

@@ -1,4 +1,4 @@
-name: Summarize Raindrop
+name: Digest and Mail Raindrop
 
 on:
   schedule:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from summarizeandmailraindroplinks.models import RaindropItem
-from summarizeandmailraindroplinks.utils import append_note, filter_new_items, threshold_from_now, trim_text
+from raindrop_digest.models import RaindropItem
+from raindrop_digest.utils import append_note, filter_new_items, threshold_from_now, trim_text
 
 JST = timezone(timedelta(hours=9))
 

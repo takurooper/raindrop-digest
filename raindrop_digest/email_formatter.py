@@ -92,11 +92,11 @@ def build_email_body(batch_date: datetime, results: List[SummaryResult]) -> Tupl
         html_parts.append("</div></div>")
 
     lines.append(f"\n※ 各要約は最大{SUMMARY_CHAR_LIMIT}文字目安で生成しています。")
-    lines.append("改善の要望があればこちら(https://github.com/takurooper/SummarizeAndMailRaindropLinks/issues)まで。")
+    lines.append("改善の要望があればこちら(https://github.com/takurooper/raindrop_digest/issues)まで。")
 
     html_parts.append(f'<div class="footer">※ 各要約は最大{SUMMARY_CHAR_LIMIT}文字目安で生成しています。</div>')
     html_parts.append(
-        '<div class="footer">改善の要望があれば<a href="https://github.com/takurooper/SummarizeAndMailRaindropLinks/issues">こちら</a>まで。</div>'
+        '<div class="footer">改善の要望があれば<a href="https://github.com/takurooper/raindrop_digest/issues">こちら</a>まで。</div>'
     )
     html_parts.append("  </div></body></html>")
 

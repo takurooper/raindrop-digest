@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from summarizeandmailraindroplinks.models import RaindropItem
-from summarizeandmailraindroplinks.utils import canonicalize_url, choose_preferred_duplicate
+from raindrop_digest.models import RaindropItem
+from raindrop_digest.utils import canonicalize_url, choose_preferred_duplicate
 
 
 def test_canonicalize_url_strips_utm_params():

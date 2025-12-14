@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from summarizeandmailraindroplinks.summarizer import Summarizer
+from raindrop_digest.summarizer import Summarizer
 
 
 class FakeOpenAI:
