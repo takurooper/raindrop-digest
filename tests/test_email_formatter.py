@@ -35,6 +35,20 @@ def test_build_email_body_success_and_failure():
     assert '<a href="https://example.com">こちらをクリック</a>' in html_body
 
 
+def test_build_email_body_uses_unsupported_format_for_x_link() -> None:
+    item = _item()
+    failure = SummaryResult(
+        item=item,
+        status="failed",
+        error="Xリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。",
+    )
+    text_body, html_body = build_email_body(datetime(2024, 12, 7, tzinfo=timezone.utc), [failure])
+    assert "▼サマリー" in text_body
+    assert "error: Xリンクは非対応です。" in text_body
+    assert "要約に失敗" not in text_body
+    assert "error: Xリンクは非対応です。" in html_body
+
+
 def test_build_email_body_includes_hero_image_when_present():
     item = _item()
     success = SummaryResult(

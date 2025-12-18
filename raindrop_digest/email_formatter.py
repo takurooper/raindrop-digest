@@ -11,12 +11,32 @@ def format_datetime_jst(dt: datetime) -> str:
     return dt.astimezone(JST).strftime("%Y-%m-%d %H:%M")
 
 SHORT_ARTICLE_DISCLAIMER = "この記事は文字数が1000未満のため、情報量が不足している可能性があります。"
+UNSUPPORTED_LINK_ERRORS = frozenset(
+    {
+        "Xリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。",
+        "YouTubeリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。",
+        "SpeakerDeckリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。",
+    }
+)
 
 
 def _needs_short_article_disclaimer(source_length: int | None) -> bool:
     if source_length is None:
         return False
     return source_length < SHORT_ARTICLE_CHAR_THRESHOLD
+
+
+def _format_failure_summary(error: str | None) -> tuple[str, str]:
+    if error and error in UNSUPPORTED_LINK_ERRORS:
+        message = f"error: {error}"
+        return message, message
+
+    text_msg = "このURLは要約に失敗したので、手動確認してね。"
+    html_msg = text_msg
+    if error:
+        text_msg += f"\n(error: {error})"
+        html_msg += f"<br>(error: {error})"
+    return text_msg, html_msg
 
 
 def build_email_subject(batch_date: datetime) -> str:
@@ -76,9 +96,8 @@ def build_email_body(batch_date: datetime, results: List[SummaryResult]) -> Tupl
         if result.is_success() and result.summary:
             lines.append(result.summary.strip())
         else:
-            lines.append("このURLは要約に失敗したので、手動確認してね。")
-            if result.error:
-                lines.append(f"(error: {result.error})")
+            failure_text, _ = _format_failure_summary(result.error)
+            lines.append(failure_text)
         lines.append("")  # spacer
 
         html_parts.append('<div class="card">')
@@ -97,10 +116,8 @@ def build_email_body(batch_date: datetime, results: List[SummaryResult]) -> Tupl
         if result.is_success() and result.summary:
             html_parts.append(result.summary.strip().replace("\n", "<br>"))
         else:
-            failure_msg = "このURLは要約に失敗したので、手動確認してね。"
-            if result.error:
-                failure_msg += f"<br>(error: {result.error})"
-            html_parts.append(failure_msg)
+            _, failure_html = _format_failure_summary(result.error)
+            html_parts.append(failure_html)
         html_parts.append("</div></div>")
 
     lines.append(f"\n※ 各要約は最大{SUMMARY_CHAR_LIMIT}文字目安で生成しています。")

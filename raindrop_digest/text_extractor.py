@@ -37,6 +37,8 @@ def detect_source(url: str) -> str:
         return "x"
     if "youtube.com" in host or "youtu.be" in host:
         return "youtube"
+    if host.endswith("speakerdeck.com"):
+        return "speakerdeck"
     return "web"
 
 
@@ -110,9 +112,11 @@ def fetch_html(url: str, *, transport: httpx.BaseTransport | None = None) -> str
 def extract_text(url: str) -> ExtractedContent:
     source = detect_source(url)
     if source == "x":
-        raise ExtractionError("Xリンクは手動確認対象のため自動要約しません。")
+        raise ExtractionError("Xリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。")
     if source == "youtube":
-        raise ExtractionError("YouTubeリンクは手動確認対象のため自動要約しません。")
+        raise ExtractionError("YouTubeリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。")
+    if source == "speakerdeck":
+        raise ExtractionError("SpeakerDeckリンクは非対応です。対応を希望する場合は、開発者までご連絡ください。")
     html_text = fetch_html(url)
     text = _extract_readability(html_text, url)
     hero_image_url = _extract_hero_image_url(html_text, url)
