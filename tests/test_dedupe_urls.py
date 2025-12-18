@@ -45,6 +45,19 @@ def test_canonicalize_url_keeps_non_default_pagination():
     assert canonicalize_url(page_1) != canonicalize_url(page_2)
 
 
+def test_canonicalize_url_strips_substack_decoration_params_custom_domain():
+    url1 = (
+        "https://www.a16z.news/p/a-roadmap-for-federal-ai-legislation"
+        "?publication_id=13145&utm_medium=email&utm_campaign=email-share&isFreemail=true&triedRedirect=true"
+    )
+    url2 = (
+        "https://www.a16z.news/p/a-roadmap-for-federal-ai-legislation"
+        "?utm_source=substack&publication_id=13145&post_id=181801973&utm_medium=email&utm_content=share"
+        "&utm_campaign=email-share&triggerShare=true&isFreemail=true&r=3m54m1&triedRedirect=true"
+    )
+    assert canonicalize_url(url1) == canonicalize_url(url2)
+
+
 def test_choose_preferred_duplicate_prefers_shorter_url():
     now = datetime(2025, 12, 13, tzinfo=timezone.utc)
     item_short = RaindropItem(

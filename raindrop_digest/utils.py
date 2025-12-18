@@ -75,10 +75,13 @@ def canonicalize_url(url: str) -> str:
     path = parts.path or "/"
 
     query_pairs = parse_qsl(parts.query, keep_blank_values=True)
+    is_substack_like = _is_substack_like(netloc, query_pairs)
     filtered_pairs = [
         (k, v)
         for (k, v) in query_pairs
-        if not _is_tracking_param(k) and not _is_default_pagination_param(k, v)
+        if not _is_tracking_param(k)
+        and not _is_default_pagination_param(k, v)
+        and not _is_substack_decoration_param(is_substack_like, k)
     ]
     filtered_pairs.sort(key=lambda kv: (kv[0], kv[1]))
     query = urlencode(filtered_pairs, doseq=True)
@@ -132,6 +135,25 @@ def _is_default_pagination_param(key: str, value: str) -> bool:
     if key.lower() == "page" and value == "1":
         return True
     return False
+
+
+def _is_substack_like(netloc: str, query_pairs: list[tuple[str, str]]) -> bool:
+    """
+    Heuristically detect Substack URLs, including custom domains.
+    """
+    if netloc.endswith(".substack.com"):
+        return True
+    lowered_keys = {k.lower() for (k, _v) in query_pairs}
+    return bool({"publication_id", "post_id"} & lowered_keys)
+
+
+def _is_substack_decoration_param(is_substack_like: bool, key: str) -> bool:
+    """
+    Drop Substack-specific decoration parameters (share/login funnels).
+    """
+    if not is_substack_like:
+        return False
+    return key.lower() in {"isfreemail", "triedredirect", "triggershare", "r", "post_id", "publication_id"}
 
 
 def choose_preferred_duplicate(items: List[RaindropItem]) -> RaindropItem:
