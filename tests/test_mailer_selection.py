@@ -5,46 +5,27 @@ import pytest
 from raindrop_digest.mailer import MailError, build_mailer
 
 
-def test_selects_brevo_when_brevo_key_is_set():
+def test_selects_ses_when_region_is_set():
     mailer = build_mailer(
-        brevo_api_key="brevo-key",
-        sendgrid_api_key=None,
+        aws_region="ap-northeast-1",
+        aws_access_key_id=None,
+        aws_secret_access_key=None,
+        aws_session_token=None,
         from_email="from@example.com",
         from_name="From",
         to_email="to@example.com",
     )
-    assert mailer.provider == "brevo"
+    assert mailer.provider == "ses"
 
 
-def test_selects_sendgrid_when_only_sendgrid_key_is_set():
-    mailer = build_mailer(
-        brevo_api_key=None,
-        sendgrid_api_key="sendgrid-key",
-        from_email="from@example.com",
-        from_name="From",
-        to_email="to@example.com",
-    )
-    assert mailer.provider == "sendgrid"
-
-
-def test_selects_brevo_when_both_keys_are_set():
-    mailer = build_mailer(
-        brevo_api_key="brevo-key",
-        sendgrid_api_key="sendgrid-key",
-        from_email="from@example.com",
-        from_name="From",
-        to_email="to@example.com",
-    )
-    assert mailer.provider == "brevo"
-
-
-def test_raises_when_no_provider_configured():
+def test_raises_when_region_missing():
     with pytest.raises(MailError):
         build_mailer(
-            brevo_api_key=None,
-            sendgrid_api_key=None,
+            aws_region=None,
+            aws_access_key_id=None,
+            aws_secret_access_key=None,
+            aws_session_token=None,
             from_email="from@example.com",
             from_name="From",
             to_email="to@example.com",
         )
-

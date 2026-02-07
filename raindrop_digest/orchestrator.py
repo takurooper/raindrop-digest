@@ -9,10 +9,22 @@ from .email_formatter import build_email_body, build_email_subject
 from .mailer import MailError, build_mailer
 from .models import RaindropItem, SummaryResult
 from .raindrop_client import RaindropApiError, RaindropClient, RaindropConnectionError
-from .summarizer import Summarizer, SummaryConnectionError, SummaryError, SummaryRateLimitError
+from .summarizer import (
+    Summarizer,
+    SummaryConnectionError,
+    SummaryError,
+    SummaryRateLimitError,
+)
 from .text_extractor import ExtractionError, extract_text
 
-from .utils import canonicalize_url, choose_preferred_duplicate, filter_new_items, threshold_from_now, to_jst, utc_now
+from .utils import (
+    canonicalize_url,
+    choose_preferred_duplicate,
+    filter_new_items,
+    threshold_from_now,
+    to_jst,
+    utc_now,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +41,10 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         system_prompt=settings.summary_system_prompt,
     )
     mailer = build_mailer(
-        brevo_api_key=settings.brevo_api_key,
-        sendgrid_api_key=settings.sendgrid_api_key,
+        aws_region=settings.aws_region,
+        aws_access_key_id=settings.aws_access_key_id,
+        aws_secret_access_key=settings.aws_secret_access_key,
+        aws_session_token=settings.aws_session_token,
         from_email=settings.from_email,
         from_name=settings.from_name,
         to_email=settings.to_email,
@@ -38,7 +52,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
     logger.info(
         "Using OpenAI model=%s prompt_source=%s",
         settings.openai_model,
-        "env:SUMMARY_SYSTEM_PROMPT" if settings.summary_system_prompt != config.DEFAULT_SYSTEM_PROMPT else "default",
+        "env:SUMMARY_SYSTEM_PROMPT"
+        if settings.summary_system_prompt != config.DEFAULT_SYSTEM_PROMPT
+        else "default",
     )
     logger.info("Using mail provider=%s", mailer.provider)
 
@@ -48,20 +64,28 @@ def run(settings: config.Settings) -> List[SummaryResult]:
         targets = filter_new_items(raw_items, threshold)
         targets, duplicates = _dedupe_targets(targets)
         if duplicates:
-            logger.info("Detected %s duplicate items; deleting redundant ones", len(duplicates))
+            logger.info(
+                "Detected %s duplicate items; deleting redundant ones", len(duplicates)
+            )
             for dup in duplicates:
                 try:
                     raindrop.delete_item(dup.id)
                 except (RaindropConnectionError, RaindropApiError) as exc:
-                    logger.warning("Failed to delete duplicate item id=%s: %s", dup.id, exc)
-        logger.info("Processing %s target items (from %s total)", len(targets), len(raw_items))
+                    logger.warning(
+                        "Failed to delete duplicate item id=%s: %s", dup.id, exc
+                    )
+        logger.info(
+            "Processing %s target items (from %s total)", len(targets), len(raw_items)
+        )
 
         results: List[SummaryResult] = []
         if not targets:
             logger.info("No new items to process; sending empty report.")
             subject = build_email_subject(now_jst)
             empty_text = f"過去{BATCH_LOOKBACK_DAYS}日分の保存リンクは0件でした。"
-            empty_html = f"<p>過去{BATCH_LOOKBACK_DAYS}日分の保存リンクは0件でした。</p>"
+            empty_html = (
+                f"<p>過去{BATCH_LOOKBACK_DAYS}日分の保存リンクは0件でした。</p>"
+            )
             mailer.send(subject, empty_text, empty_html)
             logger.info("Empty report sent.")
             return results
@@ -72,7 +96,11 @@ def run(settings: config.Settings) -> List[SummaryResult]:
             logger.info("link=%s", item.link)
             try:
                 content = extract_text(item.link)
-                logger.info("Extracted content: chars=%s source=%s", content.length, content.source)
+                logger.info(
+                    "Extracted content: chars=%s source=%s",
+                    content.length,
+                    content.source,
+                )
                 try:
                     summary_text = summarizer.summarize(content.text)
                     results.append(
@@ -85,7 +113,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
                         )
                     )
                 except (SummaryRateLimitError, SummaryConnectionError) as exc:
-                    logger.exception("OpenAI transient failure for item %s: %s", item.id, exc)
+                    logger.exception(
+                        "OpenAI transient failure for item %s: %s", item.id, exc
+                    )
                     results.append(
                         SummaryResult(
                             item=item,
@@ -96,7 +126,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
                         )
                     )
                 except SummaryError as exc:
-                    logger.exception("Summarization failed for item %s: %s", item.id, exc)
+                    logger.exception(
+                        "Summarization failed for item %s: %s", item.id, exc
+                    )
                     results.append(
                         SummaryResult(
                             item=item,
@@ -108,10 +140,14 @@ def run(settings: config.Settings) -> List[SummaryResult]:
                     )
             except (ExtractionError, SummaryError) as exc:
                 logger.exception("Failed to process item %s: %s", item.id, exc)
-                results.append(SummaryResult(item=item, status="failed", error=str(exc)))
+                results.append(
+                    SummaryResult(item=item, status="failed", error=str(exc))
+                )
             except Exception as exc:  # noqa: BLE001
                 logger.exception("Unexpected failure for item %s: %s", item.id, exc)
-                results.append(SummaryResult(item=item, status="failed", error=str(exc)))
+                results.append(
+                    SummaryResult(item=item, status="failed", error=str(exc))
+                )
 
         subject = build_email_subject(now_jst)
         text_body, html_body = build_email_body(now_jst, results)
@@ -119,7 +155,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
             mailer.send(subject, text_body, html_body)
         except MailError as exc:
             logger.exception("Mail sending failed: %s", exc)
-            failure_body = f"要約メール送信に失敗しました。\nerror={exc}\n対象数={len(results)}"
+            failure_body = (
+                f"要約メール送信に失敗しました。\nerror={exc}\n対象数={len(results)}"
+            )
             try:
                 mailer.send("【失敗】要約メール送信失敗", failure_body)
                 failure_notified = True
@@ -133,12 +171,20 @@ def run(settings: config.Settings) -> List[SummaryResult]:
             try:
                 if result.is_success() and result.summary:
                     note_text = f"▼サマリー\n{result.summary}"
-                    raindrop.append_note_and_tags(result.item, note_text, [TAG_DELIVERED])
+                    raindrop.append_note_and_tags(
+                        result.item, note_text, [TAG_DELIVERED]
+                    )
                 else:
-                    error_note = f"要約失敗: {result.error}" if result.error else "要約失敗"
-                    raindrop.append_note_and_tags(result.item, error_note, [TAG_DELIVERED, TAG_FAILED])
+                    error_note = (
+                        f"要約失敗: {result.error}" if result.error else "要約失敗"
+                    )
+                    raindrop.append_note_and_tags(
+                        result.item, error_note, [TAG_DELIVERED, TAG_FAILED]
+                    )
             except (RaindropConnectionError, RaindropApiError) as exc:
-                logger.exception("Failed to update Raindrop item %s: %s", result.item.id, exc)
+                logger.exception(
+                    "Failed to update Raindrop item %s: %s", result.item.id, exc
+                )
                 continue
 
         _log_batch_counts(results)
@@ -146,7 +192,9 @@ def run(settings: config.Settings) -> List[SummaryResult]:
     except Exception as exc:  # noqa: BLE001
         if not failure_notified:
             try:
-                mailer.send("【失敗】要約メール処理失敗", f"バッチが失敗しました。\nerror={exc}")
+                mailer.send(
+                    "【失敗】要約メール処理失敗", f"バッチが失敗しました。\nerror={exc}"
+                )
                 failure_notified = True
             except MailError:
                 logger.exception("Failed to send failure notification email.")
@@ -167,10 +215,14 @@ def _log_batch_counts(results: List[SummaryResult]) -> None:
     total = len(results)
     success = _count_success(results)
     failure = _count_failure(results)
-    logger.info("Batch completed. Total=%s Success=%s Failure=%s", total, success, failure)
+    logger.info(
+        "Batch completed. Total=%s Success=%s Failure=%s", total, success, failure
+    )
 
 
-def _dedupe_targets(targets: List[RaindropItem]) -> Tuple[List[RaindropItem], List[RaindropItem]]:
+def _dedupe_targets(
+    targets: List[RaindropItem],
+) -> Tuple[List[RaindropItem], List[RaindropItem]]:
     by_key: Dict[str, List[RaindropItem]] = {}
     for item in targets:
         key = canonicalize_url(item.link)
