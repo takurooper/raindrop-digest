@@ -1,0 +1,64 @@
+name: Daily Stock Pipeline
+
+on:
+  schedule:
+    # GitHub Actions cron is UTC. Example: 08:00 UTC = 17:00 JST.
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: stock-pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run pipeline + notify
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          TO_EMAIL: ${{ vars.TO_EMAIL }}
+          FROM_EMAIL: ${{ vars.FROM_EMAIL }}
+          FROM_NAME: ${{ vars.FROM_NAME }}
+          # Optional: pass summary numbers for the email header (pipe-separated lists)
+          STOCK_ENGINE_REGIME: ${{ vars.STOCK_ENGINE_REGIME }}
+          STOCK_ENGINE_ENTRY_CANDIDATES: ${{ vars.STOCK_ENGINE_ENTRY_CANDIDATES }}
+          STOCK_ENGINE_REVIEW_TOP: ${{ vars.STOCK_ENGINE_REVIEW_TOP }}
+          STOCK_ENGINE_DIFF_TOP: ${{ vars.STOCK_ENGINE_DIFF_TOP }}
+          STOCK_ENGINE_STREAK_DAYS: ${{ vars.STOCK_ENGINE_STREAK_DAYS }}
+          STOCK_ENGINE_SPOTLIGHT: ${{ vars.STOCK_ENGINE_SPOTLIGHT }}
+          STOCK_ENGINE_IMPROVEMENT_HINT: ${{ vars.STOCK_ENGINE_IMPROVEMENT_HINT }}
+          STOCK_ENGINE_ACTIONS: ${{ vars.STOCK_ENGINE_ACTIONS }}
+        run: |
+          python -m raindrop_digest.runner_kit.pipeline_runner \
+            --subject-prefix "stock-engine" \
+            --pipeline-cmd "stock-engine pipeline run" \
+            --output-root "output" \
+            --report-html "report.html" \
+            --min-time-jst "16:30" \
+            --max-wait-minutes 180
+
+      - name: Upload output artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output
+          path: output/**
+          if-no-files-found: ignore

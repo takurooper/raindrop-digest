@@ -6,6 +6,7 @@ from datetime import timedelta, timezone
 
 JST = timezone(timedelta(hours=9))
 
+
 def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
     raw_value = os.getenv(name)
     if raw_value is None or not raw_value.strip():
@@ -14,12 +15,17 @@ def _env_int(name: str, default: int, *, min_value: int | None = None) -> int:
     try:
         parsed = int(raw_value.strip())
     except ValueError as exc:
-        raise ValueError(f"Environment variable {name} must be an integer, got {raw_value!r}.") from exc
+        raise ValueError(
+            f"Environment variable {name} must be an integer, got {raw_value!r}."
+        ) from exc
 
     if min_value is not None and parsed < min_value:
-        raise ValueError(f"Environment variable {name} must be >= {min_value}, got {parsed}.")
+        raise ValueError(
+            f"Environment variable {name} must be >= {min_value}, got {parsed}."
+        )
 
     return parsed
+
 
 # --------------------------------
 # 設定値
@@ -61,12 +67,15 @@ TAG_FAILED = "要約失敗"
 UNSORTED_COLLECTION_ID = -1
 # --------------------------------
 
+
 @dataclass
 class Settings:
     raindrop_token: str
     openai_api_key: str
-    sendgrid_api_key: str | None
-    brevo_api_key: str | None
+    aws_region: str
+    aws_access_key_id: str | None
+    aws_secret_access_key: str | None
+    aws_session_token: str | None
     to_email: str
     from_email: str
     from_name: str
@@ -96,19 +105,22 @@ class Settings:
                 return None
             return value.strip()
 
-        sendgrid_api_key = optional("SENDGRID_API_KEY")
-        brevo_api_key = optional("BREVO_API_KEY")
-        if brevo_api_key is None and sendgrid_api_key is None:
-            raise ValueError("Either BREVO_API_KEY or SENDGRID_API_KEY is required.")
+        aws_region = optional("AWS_REGION") or optional("AWS_DEFAULT_REGION")
+        if aws_region is None:
+            raise ValueError("AWS_REGION or AWS_DEFAULT_REGION is required.")
 
         return Settings(
             raindrop_token=require("RAINDROP_TOKEN"),
             openai_api_key=require("OPENAI_API_KEY"),
-            sendgrid_api_key=sendgrid_api_key,
-            brevo_api_key=brevo_api_key,
+            aws_region=aws_region,
+            aws_access_key_id=optional("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=optional("AWS_SECRET_ACCESS_KEY"),
+            aws_session_token=optional("AWS_SESSION_TOKEN"),
             to_email=require("TO_EMAIL"),
             from_email=require("FROM_EMAIL"),
             from_name=optional_with_default("FROM_NAME", from_name_default),
             openai_model=optional_with_default("OPENAI_MODEL", openai_model_default),
-            summary_system_prompt=optional_with_default("SUMMARY_SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT),
+            summary_system_prompt=optional_with_default(
+                "SUMMARY_SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT
+            ),
         )
