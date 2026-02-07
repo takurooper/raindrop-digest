@@ -5,12 +5,23 @@ on:
     - cron: "0 10 * * *" # JST 19:00 every day
   workflow_dispatch:
 
+# OIDC認証に必要な権限
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -26,8 +37,7 @@ jobs:
         env:
           RAINDROP_TOKEN: ${{ secrets.RAINDROP_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          # AWS認証はRoleで自動設定されるため、個別のキーは不要
           SUMMARY_SYSTEM_PROMPT: ${{ secrets.SUMMARY_SYSTEM_PROMPT }}
           TO_EMAIL: ${{ vars.TO_EMAIL }}
           FROM_EMAIL: ${{ vars.FROM_EMAIL }}
