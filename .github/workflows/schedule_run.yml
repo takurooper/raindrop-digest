@@ -40,7 +40,8 @@ jobs:
           # AWS認証はRoleで自動設定されるため、個別のキーは不要
           SUMMARY_SYSTEM_PROMPT: ${{ secrets.SUMMARY_SYSTEM_PROMPT }}
           TO_EMAIL: ${{ vars.TO_EMAIL }}
-          FROM_EMAIL: ${{ vars.FROM_EMAIL }}
+          # Why: SES/IAMポリシーで許可している検証済み送信元に固定し、誤設定（例: 個人Gmail）でAccessDeniedにならないようにする。
+          FROM_EMAIL: noreply@takurooper.site
           FROM_NAME: ${{ vars.FROM_NAME }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
           BATCH_LOOKBACK_DAYS: ${{ vars.BATCH_LOOKBACK_DAYS }}
