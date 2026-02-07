@@ -37,12 +37,11 @@ GitHub Actions で「日次バッチ実行 + メール通知」を作るため�
 3) Secrets / Variables
 
 - Secrets:
-  - `AWS_REGION`
-  - （任意）`AWS_ACCESS_KEY_ID`
-  - （任意）`AWS_SECRET_ACCESS_KEY`
-  - （任意）`AWS_SESSION_TOKEN`
+  - `AWS_ROLE_ARN`
 - Variables:
   - `TO_EMAIL`, `FROM_EMAIL`, `FROM_NAME`
+
+※ AWSリージョン（`AWS_REGION`）は `aws-actions/configure-aws-credentials` の `aws-region` で設定し、環境変数として注入される前提です。
 
 任意で、メール上部の「1分で判断できる要約」を env で渡せます。
 

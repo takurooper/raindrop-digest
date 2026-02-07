@@ -1,6 +1,6 @@
 # Raindrop要約メール配信サービス（セットアップ手順）
 
-Raindrop.io に保存したリンクを、GitHub Actions の定期実行で要約し、SendGrid 経由でメール配信します。
+Raindrop.io に保存したリンクを、GitHub Actions の定期実行で要約し、AWS SES 経由でメール配信します。
 
 詳細仕様（エンジニア向け）は `docs/spec.md` を参照してください。
 
@@ -11,8 +11,7 @@ Raindrop.io に保存したリンクを、GitHub Actions の定期実行で要�
 - GitHub（このリポジトリをフォークして利用するのがおすすめ）
 - Raindrop.io（ブックマーク保存先）
 - OpenAI（要約用API）
-- Brevo（メール送信用・推奨）
-- （任意）SendGrid（メール送信用・フォールバックとして利用可能）
+- AWS SES（メール送信用）
 
 ---
 
@@ -51,50 +50,34 @@ https://app.raindrop.io/settings/integrations
 
 ---
 
-## 4. Brevo を設定（メール送信・推奨）
+## 4. AWS SES を設定（メール送信）
 
-### 4.1 Brevo の送信者（Sender）を用意
+### 4.1 送信元の確認（Sender）
 
-Brevo で送信元を登録します（画面の案内に従って Sender を作成してください）。
+SES で送信元メールアドレスまたはドメインを検証します。
 
-参考: https://developers.brevo.com/docs/getting-started
+参考: https://docs.aws.amazon.com/ses/latest/dg/verify-addresses-and-domains.html
 
-### 4.2 Brevo APIキーを作成
+### 4.2 認証情報を用意
 
-1) Brevo の `SMTP & API` から API key を作成  
-2) 作成したキーを控える（あとで GitHub Secrets に登録）
+GitHub Actions から SES を呼び出すために、GitHub Actions OIDC + IAM Role を利用します。
 
----
+- IAM ユーザーの `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` は使いません
+- セットアップ手順（Terraform側）は `aws-terraform` を参照してください
+  - https://github.com/takurooper/aws-terraform/tree/main/ses-setup
+  - https://github.com/takurooper/aws-terraform/blob/main/ses-setup/GITHUB_ACTIONS_SETUP.md
 
-## 5. SendGrid を設定（メール送信・任意）
-
-### 5.1 Sender（送信元）を用意
-
-SendGrid は送信元の設定が必須です。まずは簡単な方法として「Single Sender Verification」を使えます。
-
-- SendGrid Single Sender Verification: https://docs.sendgrid.com/ui/sending-email/sender-verification
-
-送信元メールアドレス（`FROM_EMAIL`）はここで認証したものを使ってください。
-
-### 5.2 SendGrid APIキーを作成
-
-1) SendGrid の API Keys で API key を作成  
-https://docs.sendgrid.com/ui/account-and-settings/api-keys
-
-2) 作成したキーを控える（あとで GitHub Secrets に登録）
-
-### 5.3 迷惑メール対策（重要）
+### 4.3 迷惑メール対策（重要）
 
 メールが「迷惑メール」に入る場合があります。以下を推奨します。
 
-- SendGrid 側で Sender 認証（可能なら Domain Authentication も）を行う  
-  https://docs.sendgrid.com/ui/account-and-settings/how-to-set-up-domain-authentication
+- 送信元ドメインを検証し、可能なら SPF/DKIM を設定
 - 受信側（Gmail など）で `FROM_EMAIL` を「連絡先に追加」/ フィルタで受信トレイへ振り分け
 - 会社/学校メールの場合、ドメイン指定受信（ホワイトリスト）に `FROM_EMAIL` を追加
 
 ---
 
-## 6. GitHub Actions に設定を登録
+## 5. GitHub Actions に設定を登録
 
 GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `Actions` を開きます。
 
@@ -104,9 +87,10 @@ GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `A
 
 - `RAINDROP_TOKEN`（Raindrop API token）
 - `OPENAI_API_KEY`
-- `BREVO_API_KEY`（Brevo API key。通常はこちらを設定）
-- （任意）`SENDGRID_API_KEY`（SendGrid API key。フォールバックとして利用）
+- `AWS_ROLE_ARN`（GitHub Actions が引き受けるIAM RoleのARN）
 - （任意）`SUMMARY_SYSTEM_PROMPT`（要約プロンプトをカスタムしたい場合）
+
+※ AWSリージョンはワークフロー側（`.github/workflows/schedule_run.yml` の `aws-region`）で設定します。
 
 `SUMMARY_SYSTEM_PROMPT` は複数行でもOKです。未設定の場合はコード内のデフォルトプロンプトが使われます。
 
@@ -125,10 +109,10 @@ GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `A
 ## 6. GitHub Actions を実行する
 
 1) リポジトリの `Actions` タブを開く  
-2) `Summarize Raindrop` ワークフローを選ぶ  
+2) `Digest and Mail Raindrop` ワークフローを選ぶ  
 3) `Run workflow` で手動実行（最初の動作確認におすすめ）
 
-スケジュール実行（cron）は `.github/workflows/summarize-raindrop.yml` に定義されています。
+スケジュール実行（cron）は `.github/workflows/schedule_run.yml` に定義されています。
 
 ---
 
@@ -148,8 +132,8 @@ GitHub のリポジトリ画面で `Settings` → `Secrets and variables` → `A
 - メールが来ない
   - `Actions` の実行ログを確認（失敗している場合はログに出ます）
   - 迷惑メールフォルダを確認（上記「迷惑メール対策」を参照）
-- Brevo/SendGrid のどちらが使われているか確認したい
-  - GitHub Actions のログに `Using mail provider=brevo|sendgrid` と出ます
+- どのメールプロバイダーが使われているか確認したい
+  - GitHub Actions のログに `Using mail provider=ses` と出ます
 - OpenAI のエラーが多い
   - 一時的な 502/503/504 は 1 回だけリトライします
   - それ以外の失敗は該当リンクのみ失敗扱いになり、メールには「手動確認」として載ります

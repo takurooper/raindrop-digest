@@ -208,3 +208,11 @@ __marimo__/
 
 # User defined
 prompts_memo.md
+
+# macOS Finder
+.DS_Store
+**/.DS_Store
+
+# Local artifacts
+AWSCLIV2.pkg
+docs/ses-setup/
