@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Dict, Optional, Tuple, Type, TYPE_CHECKING
 
 try:
     from openai import APIConnectionError, APITimeoutError, OpenAI, RateLimitError
@@ -65,19 +65,21 @@ class Summarizer:
 
     def summarize(self, text: str) -> str:
         logger.info("Summarization request: chars=%s", len(text))
+        request_payload: Dict[str, Any] = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": self._system_prompt,
+                },
+                {"role": "user", "content": text},
+            ],
+        }
         for attempt in range(2):
             try:
-                response = self._client.chat.completions.create(
-                    model=self._model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": self._system_prompt,
-                        },
-                        {"role": "user", "content": text},
-                    ],
-                    temperature=0.3,
-                )
+                # Some newer models only accept the default temperature.
+                # We omit it to maximize model compatibility.
+                response = self._client.chat.completions.create(**request_payload)
                 break
             except Exception as exc:  # noqa: BLE001
                 status_code = _extract_status_code(exc)
